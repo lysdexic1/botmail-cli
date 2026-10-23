@@ -1,0 +1,37 @@
+{
+  "name": "botmail-cli",
+  "version": "1.0.0",
+  "description": "Official AI-agent-native CLI for Botmail — project-owned email identities, inboxes, messages, OAuth 2.1, and MCP configuration.",
+  "type": "module",
+  "bin": {
+    "botmail": "./bin/botmail.mjs"
+  },
+  "files": [
+    "bin/",
+    "src/",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "start": "node ./bin/botmail.mjs",
+    "test": "node --test ./test/cli.test.mjs"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lysdexic1/botmail-cli.git"
+  },
+  "homepage": "https://dev.botmail.work/cli.html",
+  "keywords": [
+    "botmail",
+    "email",
+    "ai-agents",
+    "mcp",
+    "cli",
+    "model-context-protocol"
+  ],
+  "author": "Munro Entertainment",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

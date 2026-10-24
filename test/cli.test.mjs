@@ -17,6 +17,8 @@ test('botmail schema outputs machine-readable JSON manifest for AI agents', asyn
   assert.equal(manifest.endpoints.remoteMcp, 'https://mcp.botmail.work');
   assert.ok(Array.isArray(manifest.commands));
   assert.ok(manifest.commands.length >= 15);
+  assert.ok(manifest.commands.some((c) => c.command.includes('messages escalate')));
+  assert.ok(manifest.commands.some((c) => c.command.includes('escalation status')));
 });
 
 test('botmail --version --json returns structured version', async () => {

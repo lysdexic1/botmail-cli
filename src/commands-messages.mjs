@@ -96,6 +96,28 @@ export async function handleMessagesAndSecurity(settings, resource, action, rest
         process.stdout.write(`✓ Reply ${r.message?.id} ${r.message?.status} (route: ${r.route})\n`);
       });
     }
+    if (action === 'escalate' || action === 'forward') {
+      const id = rest[0] || flags.id || flags.message;
+      const to = flags.to;
+      const note = flags.note || flags.text || flags.summary || 'Escalated via Botmail CLI over the Free Internal Escalation Bus.';
+      if (!id || !to) {
+        throw new BotmailCliError('Usage: botmail messages escalate <messageId> --to <target@botmail.work> [--note <summary>] [--severity low|normal|high|critical] [--category <tag>]', { code: 'invalid_args', exitCode: 2 });
+      }
+      const opId = String(flags['operation-id'] || crypto.randomUUID());
+      const d = await apiRequest(settings, `/messages/${encodeURIComponent(id)}/escalate`, {
+        method: 'POST',
+        headers: { 'Idempotency-Key': opId, 'X-Operation-Id': opId },
+        body: {
+          to: String(to),
+          note: String(note),
+          severity: flags.severity ? String(flags.severity) : 'normal',
+          category: flags.category ? String(flags.category) : undefined,
+        },
+      });
+      return outputResult(settings, { route: 'internal_escalation_bus', provider_credits_consumed: 0, ...d }, (r) => {
+        process.stdout.write(`✓ Escalated message ${id} -> ${r.escalation?.to || to} (severity: ${r.escalation?.severity || 'normal'}, route: internal_escalation_bus, credits: 0)\n`);
+      });
+    }
     if (action === 'archive' || action === 'delete' || action === 'trash' || action === 'rm') {
       const id = rest[0] || flags.id;
       if (!id) throw new BotmailCliError('Missing <messageId>', { code: 'invalid_args', exitCode: 2 });
@@ -108,6 +130,38 @@ export async function handleMessagesAndSecurity(settings, resource, action, rest
       return outputResult(settings, d, (r) => process.stdout.write(`✓ ${action === 'archive' ? 'Archived' : 'Deleted'} message ${r.id}\n`));
     }
     throw new BotmailCliError(`Unknown messages action: ${action}`, { code: 'invalid_args', exitCode: 2 });
+  }
+
+  if (resource === 'escalation' || resource === 'escalation-bus' || resource === 'bus') {
+    if (!action || action === 'status' || action === 'targets' || action === 'list') {
+      const d = await apiRequest(settings, '/escalation-bus');
+      return outputResult(settings, d, (r) => {
+        process.stdout.write(`⚡ Free Internal Escalation Bus: ${r.bus?.enabled ? 'ACTIVE' : 'PAUSED'} (0 Credits · Daily Limit: ${r.bus?.dailyLimit ?? 5000})\n`);
+        process.stdout.write(`  Today: ${r.stats?.internalSentToday ?? 0} internal deliveries (${r.stats?.escalationsToday ?? 0} escalations) · Total Credits Saved: ${r.stats?.creditsSaved ?? 0}\n`);
+        printTable(r.recommendedTargets || [], [
+          { key: 'address', label: 'ESCALATION TARGET' },
+          { key: 'category', label: 'CATEGORY' },
+          { key: 'provisioned', label: 'PROVISIONED' },
+          { key: 'label', label: 'DESCRIPTION', maxWidth: 36 },
+        ]);
+      });
+    }
+    if (action === 'provision') {
+      const prefix = flags.prefix || rest[0];
+      if (!prefix) throw new BotmailCliError('Usage: botmail escalation provision --prefix <tier2-eng|billing-review> [--display-name <label>] [--project <id>]', { code: 'invalid_args', exitCode: 2 });
+      const d = await apiRequest(settings, '/escalation-bus/provision', {
+        method: 'POST',
+        body: {
+          prefix: String(prefix),
+          displayName: flags['display-name'] ? String(flags['display-name']) : undefined,
+          projectId: flags.project || flags['project-id'] ? String(flags.project || flags['project-id']) : undefined,
+        },
+      });
+      return outputResult(settings, d, (r) => {
+        process.stdout.write(`✓ Provisioned escalation target ${r.inbox?.address} (${r.inbox?.id})\n`);
+      });
+    }
+    throw new BotmailCliError(`Unknown escalation action: ${action}`, { code: 'invalid_args', exitCode: 2 });
   }
 
   return handleSecurityCommands(settings, resource, action, rest, flags);

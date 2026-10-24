@@ -104,6 +104,18 @@ botmail messages send \
 # Reply to an inbound message thread
 botmail messages reply <messageId> --text "Thanks, we received your message." [--operation-id <key>] [--json]
 
+# Escalate/forward a message over the Free Internal Escalation Bus (0 credits)
+botmail messages escalate <messageId> \
+  --to tier2-eng@botmail.work \
+  --severity high \
+  --category tier2-eng \
+  --note "Customer reports 502 on /v1/checkout; reproducible in staging." \
+  [--operation-id <key>] [--json]
+
+# Inspect Free Internal Escalation Bus status & provision specialist escalation targets
+botmail escalation status [--json]
+botmail escalation provision --prefix tier2-eng --display-name "Tier-2 Engineering"
+
 # Archive a message to free active inbox storage
 botmail messages archive <messageId>
 

@@ -21,8 +21,10 @@ Commands:
   botmail messages search --query <text> [--inbox <id>]
   botmail messages get <messageId>
   botmail messages send --inbox <id> --to <email> --subject <subj> --text <body> [--operation-id <id>]
+  botmail messages escalate <messageId> --to <target@botmail.work> [--note <summary>] [--severity low|normal|high|critical]
   botmail messages reply <messageId> --text <body> [--operation-id <id>]
   botmail messages archive <messageId> | delete <messageId>
+  botmail escalation status | provision --prefix <tier2-eng|billing-review> [--project <id>]
   botmail agents list | create --name <name> [--description <text>]
   botmail credentials list | create --agent <id> --name <label> [--scopes read,send,manage] | revoke <id>
   botmail connections list | revoke <id>
@@ -103,7 +105,7 @@ export async function runCli(argv) {
     const d = await apiRequest(settings, '/usage');
     return outputResult(settings, d, () => {
       const u = d.usage || {};
-      process.stdout.write(`Inboxes: ${u.inboxes?.used ?? 0}/${u.inboxes?.limit ?? 0} | Inbox Storage: ${u.messages?.used ?? 0}/${u.messages?.limit ?? 0} | Archive: ${u.archive?.used ?? 0}/${u.archive?.limit ?? 2500} | Inbound: ${u.inbound?.used ?? 0}/${u.inbound?.limit ?? 0} | Outbound: ${u.outbound?.used ?? 0}/${u.outbound?.limit ?? 0}\n`);
+      process.stdout.write(`Inboxes: ${u.inboxes?.used ?? 0}/${u.inboxes?.limit ?? 0} | Inbox Storage: ${u.messages?.used ?? 0}/${u.messages?.limit ?? 0} | Archive: ${u.archive?.used ?? 0}/${u.archive?.limit ?? 2500} | Inbound: ${u.inbound?.used ?? 0}/${u.inbound?.limit ?? 0} | Outbound (Ext): ${u.outbound?.used ?? 0}/${u.outbound?.limit ?? 0} | Internal Escalation Bus: ${u.internalBus?.used ?? 0}/${u.internalBus?.limit ?? 5000} (0 credits, ${u.internalBus?.totalSavedCredits ?? 0} saved)\n`);
     });
   }
 
